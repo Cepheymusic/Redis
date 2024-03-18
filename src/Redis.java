@@ -5,19 +5,19 @@ import java.util.Map;
 public class Redis {
     private Map<String, Object> map;
     private boolean isEnablePersistence;
-    private String persistenceFilePath = "redis_data.txt";
+    private String persistenceFilePath = "D:\\Project idea\\Redis\\src\\redis_data.txt";
 
     public Redis(boolean isEnablePersistence) {
         this.map = new HashMap<>();
         this.isEnablePersistence = isEnablePersistence;
         //если isEnablePersistence true,
-        // вызываются методы loadPersistenceData() для загрузки данных
-        // и startPersistenceThread() для запуска потока,
+        // вызываются методы readData() для загрузки данных
+        // и startThread() для запуска потока,
         // который будет сохранять данные в хранилище
 
         if (isEnablePersistence) {
-            loadPersistenceData();
-            startPersistenceThread();
+            readData();
+            startThread();
         }
     }
 
@@ -28,19 +28,20 @@ public class Redis {
     public void set(String key, Object value) {
         map.put(key, value);
         if (isEnablePersistence) {
-            persistData();
+            writeData();
         }
     }
 
     public void set(String key, Object value, int expiration) {
         map.put(key, value);
         if (isEnablePersistence) {
-            persistData();
+            writeData();
         }
     }
     //запись данных из мапы
-    private void persistData() {
+    private void writeData() {
         try (FileOutputStream fos = new FileOutputStream(persistenceFilePath);
+             //сериализация
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(map);
         } catch (IOException e) {
@@ -48,7 +49,7 @@ public class Redis {
         }
     }
 
-    private void loadPersistenceData() {
+    private void readData() {
         try (FileInputStream fis = new FileInputStream(persistenceFilePath);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             map = (Map<String, Object>) ois.readObject();
@@ -57,10 +58,10 @@ public class Redis {
         }
     }
 
-    private void startPersistenceThread() {
-        Thread persistenceThread = new Thread(() -> {
+    private void startThread() {
+        Thread thread = new Thread(() -> {
             while (isEnablePersistence) {
-                persistData();
+                writeData();
                 try {
                     Thread.sleep(60000); // Сохранение каждую минуту
                 } catch (InterruptedException e) {
@@ -68,6 +69,6 @@ public class Redis {
                 }
             }
         });
-        persistenceThread.start();
+        thread.start();
     }
 }
