@@ -5,14 +5,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-public class RedisImpl {
+public interface RedisImpl {
     private Map<String, String> map = new HashMap<>();
 
-    public Object get(String k) {
-        return map.get(k);
-    }
+    public Object get(String k);
 
-    public void set(String k, String v, BigDecimal ttl) {
+    public void set(String k, ObjectDTO v);
+
+    public void set(String k, ObjectDTO v, int ttl) {
 
 
     }

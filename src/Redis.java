@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Redis {
+public class Redis implements RedisImpl {
     //данные из мап он же редис должны сохраняться на диск то есть в файл, в случае слёта сервера то есть мапы
     // далее, данные должны считываться из файла.
     //
@@ -25,20 +25,20 @@ public class Redis {
         }
     }
 
+    @Override
     public Object get(String key) {
         return map.get(key);
     }
 
-    public void set(String key, Object value) {
+    @Override
+    public void set(String key, ObjectDTO value) {
         map.put(key, value);
-        if (isEnablePersistence) {
-            writeData();
-        }
     }
 
     public void set(String key, Object value, int expiration) {
         map.put(key, value);
     }
+
     //запись данных из мапы
     private void writeData() {
         try (FileOutputStream fos = new FileOutputStream(filePath);
