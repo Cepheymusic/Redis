@@ -1,13 +1,12 @@
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Redis implements RedisImpl {
-    //данные из мап он же редис должны сохраняться на диск то есть в файл, в случае слёта сервера то есть мапы
-    // далее, данные должны считываться из файла.
-    //
-    private Map<String, Object> map;
-    //создать dto object со структурой значение и persistance
+    private Map<String, ObjectDTO> map;
     private boolean isEnablePersistence;
     private String filePath = "D:\\Project idea\\Redis\\src\\redis_data.txt";
 
@@ -26,20 +25,16 @@ public class Redis implements RedisImpl {
     }
 
     @Override
-    public Object get(String key) {
+    public ObjectDTO get(String key) {
         return map.get(key);
     }
 
-    @Override
-    public void set(String key, ObjectDTO value) {
-        map.put(key, value);
+    public void set(String key, ObjectDTO object) {
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        executor.schedule(() -> map.remove(key), object.getTtl(), TimeUnit.SECONDS);
+        map.put(key, object);
     }
 
-    public void set(String key, Object value, int expiration) {
-        map.put(key, value);
-    }
-
-    //запись данных из мапы
     private void writeData() {
         try (FileOutputStream fos = new FileOutputStream(filePath);
              //сериализация
@@ -53,24 +48,35 @@ public class Redis implements RedisImpl {
     private void readData() {
         try (FileInputStream fis = new FileInputStream(filePath);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
-            map = (Map<String, Object>) ois.readObject();
+            map = (Map<String, ObjectDTO>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
+
     private void startThread() {
-        Thread thread = new Thread(() -> {
-            while (isEnablePersistence) {
-                writeData();
-                try {
-                    Thread.sleep(60000);
-                    //использовать таймер
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        ScheduledExecutorService scheduled = Executors.newSingleThreadScheduledExecutor();
+        while (isEnablePersistence) {
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+                    writeData();
                 }
-            }
-        });
-        thread.start();
+            };
+            scheduled.schedule(task, 2000, TimeUnit.MILLISECONDS);
+        }
+//        Thread thread = new Thread(() -> {
+//            while (isEnablePersistence) {
+//                writeData();
+//                try {
+//                    Thread.sleep(60000);
+//                    //использовать таймер
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+//        thread.start();
     }
 }

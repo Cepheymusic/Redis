@@ -6,15 +6,10 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public interface RedisImpl {
-    private Map<String, String> map = new HashMap<>();
 
-    public Object get(String k);
+    ObjectDTO get(String k);
 
-    public void set(String k, ObjectDTO v);
+    void set(String k, ObjectDTO v);
 
-    public void set(String k, ObjectDTO v, int ttl) {
-
-
-    }
 
 }
