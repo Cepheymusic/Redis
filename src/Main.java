@@ -1,10 +1,11 @@
-import java.math.BigDecimal;
+import dto.ObjectDTO;
+import service.impl.RedisImpl;
 
 public class Main {
-    static ObjectDTO objectDTO = new ObjectDTO("Sara", 2);
+    static ObjectDTO objectDTO = new ObjectDTO("Sara", 2, System.currentTimeMillis());
 
     public static void main(String[] args) {
-        Redis redis = new Redis(true);
-        redis.set("Women", objectDTO);
+        RedisImpl redisImpl = new RedisImpl(true);
+        redisImpl.set("Women", objectDTO);
     }
 }

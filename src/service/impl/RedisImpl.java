@@ -1,16 +1,23 @@
+package service.impl;
+
+import dto.ObjectDTO;
+import service.Redis;
+
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Redis implements RedisImpl {
+public class RedisImpl implements Redis {
     private Map<String, ObjectDTO> map;
     private boolean isEnablePersistence;
     private String filePath = "D:\\Project idea\\Redis\\src\\redis_data.txt";
 
-    public Redis(boolean isEnablePersistence) {
+    public RedisImpl(boolean isEnablePersistence) {
         this.map = new HashMap<>();
         this.isEnablePersistence = isEnablePersistence;
         //если isEnablePersistence true,
@@ -25,14 +32,31 @@ public class Redis implements RedisImpl {
     }
 
     @Override
-    public ObjectDTO get(String key) {
+    public synchronized ObjectDTO get(String key) {
         return map.get(key);
     }
 
-    public void set(String key, ObjectDTO object) {
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.schedule(() -> map.remove(key), object.getTtl(), TimeUnit.SECONDS);
+    @Override
+    public synchronized void set(String key, ObjectDTO object) {
         map.put(key, object);
+        checkObjectTtl(key, object.getTtl());
+    }
+
+    @Override
+    public void checkObjectTtl(String k, int ttl) {
+        if (ttl > 0) {
+            List<String> keysToDelete = new ArrayList<>();
+            for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
+                long currentTime = System.currentTimeMillis();
+                long entryTime = entry.getValue().getTimeAdded();
+                if ((currentTime - entryTime) > ttl) {
+                    keysToDelete.add(entry.getKey());
+                }
+            }
+            for (String key : keysToDelete) {
+                map.remove(key);
+            }
+        }
     }
 
     private void writeData() {
@@ -66,17 +90,5 @@ public class Redis implements RedisImpl {
             };
             scheduled.schedule(task, 2000, TimeUnit.MILLISECONDS);
         }
-//        Thread thread = new Thread(() -> {
-//            while (isEnablePersistence) {
-//                writeData();
-//                try {
-//                    Thread.sleep(60000);
-//                    //использовать таймер
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
-//        thread.start();
     }
 }

@@ -1,10 +1,14 @@
+package dto;
+
 public class ObjectDTO {
     private String name;
     private int ttl;
+    public long timeAdded;
 
-    public ObjectDTO(String name, int ttl) {
+    public ObjectDTO(String name, int ttl, long timeAdded) {
         this.name = name;
         this.ttl = ttl;
+        this.timeAdded = System.currentTimeMillis();
     }
 
     public String getName() {
@@ -21,5 +25,8 @@ public class ObjectDTO {
 
     public void setTtl(int ttl) {
         this.ttl = ttl;
+    }
+    public long getTimeAdded() {
+        return timeAdded;
     }
 }
