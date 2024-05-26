@@ -4,10 +4,7 @@ import dto.ObjectDTO;
 import service.Redis;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,12 +19,13 @@ public class RedisImpl implements Redis {
         this.isEnablePersistence = isEnablePersistence;
         //если isEnablePersistence true,
         // вызываются методы readData() для загрузки данных
-        // и startThread() для запуска потока,
+        // и startThread()  для запуска потока,
         // который будет сохранять данные в хранилище
 
         if (isEnablePersistence) {
-            readData();
             startThread();
+            readData();
+            startTtlCheckScheduler();
         }
     }
 
@@ -39,24 +37,32 @@ public class RedisImpl implements Redis {
     @Override
     public synchronized void set(String key, ObjectDTO object) {
         map.put(key, object);
-        checkObjectTtl(key, object.getTtl());
     }
 
     @Override
-    public void checkObjectTtl(String k, int ttl) {
-        if (ttl > 0) {
-            List<String> keysToDelete = new ArrayList<>();
-            for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
-                long currentTime = System.currentTimeMillis();
-                long entryTime = entry.getValue().getTimeAdded();
-                if ((currentTime - entryTime) > ttl) {
-                    keysToDelete.add(entry.getKey());
-                }
-            }
-            for (String key : keysToDelete) {
-                map.remove(key);
+    public void checkObjectTtl(String k, int ttl, Map<String, ObjectDTO> map1) {
+        if (map.containsKey(k)) {
+            long currentTime = System.currentTimeMillis();
+            long objectTime = map.get(k).getTimeAdded();
+            long timeElapsed = currentTime - objectTime;
+
+            if (timeElapsed > ttl) {
+                map.remove(k);
             }
         }
+//        if (ttl > 0) {
+//            List<String> keysToDelete = new ArrayList<>();
+//            for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
+//                long currentTime = System.currentTimeMillis();
+//                long entryTime = entry.getValue().getTimeAdded();
+//                if ((currentTime - entryTime) > ttl) {
+//                    keysToDelete.add(entry.getKey());
+//                }
+//            }
+//            for (String key : keysToDelete) {
+//                map.remove(key);
+//            }
+//        }
     }
 
     private void writeData() {
@@ -90,5 +96,13 @@ public class RedisImpl implements Redis {
             };
             scheduled.schedule(task, 2000, TimeUnit.MILLISECONDS);
         }
+    }
+    private void startTtlCheckScheduler() {
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(() -> {
+            for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
+                checkObjectTtl(entry.getKey(), entry.getValue().getTtl(), map);
+            }
+        }, 0, 1, TimeUnit.SECONDS);
     }
 }

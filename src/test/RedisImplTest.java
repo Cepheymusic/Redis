@@ -35,16 +35,20 @@ class RedisImplTest {
 
     }
 
+
     @Test
-    void checkObjectTtl() {
-        ObjectDTO object = new ObjectDTO("value", 1, System.currentTimeMillis());
-        redis.set("key", object);
+    public void testCheckObjectTtl() {
+        Map<String, ObjectDTO> map = new HashMap<>();
+        ObjectDTO object1 = new ObjectDTO("value1", 900, System.currentTimeMillis());
+                map.put("key1", object1);
+        redis.checkObjectTtl("key1", object1.getTtl(), map);
         try {
-            Thread.sleep(2000);
+
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        ObjectDTO result = redis.get("key");
-        assertNull(result);
+        assertEquals(1, map.size());
+        assertEquals(map.get("key1"), object1);
     }
 }
