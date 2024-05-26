@@ -50,19 +50,6 @@ public class RedisImpl implements Redis {
                 map.remove(k);
             }
         }
-//        if (ttl > 0) {
-//            List<String> keysToDelete = new ArrayList<>();
-//            for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
-//                long currentTime = System.currentTimeMillis();
-//                long entryTime = entry.getValue().getTimeAdded();
-//                if ((currentTime - entryTime) > ttl) {
-//                    keysToDelete.add(entry.getKey());
-//                }
-//            }
-//            for (String key : keysToDelete) {
-//                map.remove(key);
-//            }
-//        }
     }
 
     private void writeData() {
