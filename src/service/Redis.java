@@ -10,7 +10,7 @@ public interface Redis {
 
     void set(String k, ObjectDTO v);
 
-    void checkObjectTtl(String k, int ttl, Map<String, ObjectDTO> map1);
+    void checkObjectTtl(String k, int ttl);
 
 
 }
