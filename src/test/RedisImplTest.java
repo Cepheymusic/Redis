@@ -41,14 +41,12 @@ class RedisImplTest {
         Map<String, ObjectDTO> map = new HashMap<>();
         ObjectDTO object1 = new ObjectDTO("value1", 900, System.currentTimeMillis());
                 map.put("key1", object1);
-        redis.checkObjectTtl("key1", object1.getTtl(), map);
         try {
-
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertEquals(1, map.size());
-        assertEquals(map.get("key1"), object1);
+        redis.checkObjectTtl("key1", object1.getTtl());
+        assertEquals(0, map.size());
     }
 }

@@ -1,5 +1,4 @@
 package service.impl;
-
 import dto.ObjectDTO;
 import service.Redis;
 
@@ -19,13 +18,8 @@ public class RedisImpl implements Redis {
         this.isEnablePersistence = isEnablePersistence;
 
         if (isEnablePersistence) {
-            //если isEnablePersistence true,
-//        // вызываются методы readData() для загрузки данных
-//        // и startThread()  для запуска потока,
-//        // который будет сохранять данные в хранилище
             startThread();
             readData();
-//            startTtlCheckScheduler();
         }
     }
 
@@ -44,6 +38,27 @@ public class RedisImpl implements Redis {
         System.out.println("Объект добавлен: " + map.get(key));
     }
 
+    private void startThread() {
+        ScheduledExecutorService scheduled = Executors.newSingleThreadScheduledExecutor();
+        scheduled.scheduleAtFixedRate(this::writeData, 1000, 1000, TimeUnit.MILLISECONDS);
+        scheduled.scheduleAtFixedRate(this::checkObjectsTtl, 1000, 1000, TimeUnit.MILLISECONDS);
+        scheduled.scheduleAtFixedRate(this::readData, 1000, 1000, TimeUnit.MILLISECONDS);
+    }
+
+
+    public void checkObjectsTtl() {
+        List<String> keysToRemove = new ArrayList<>();
+        for (Map.Entry<String, ObjectDTO> entry : map.entrySet()) {
+            checkObjectTtl(entry.getKey(), entry.getValue().getTtl());
+            if (!map.containsKey(entry.getKey())) {
+                keysToRemove.add(entry.getKey());
+            }
+        }
+        for (String key : keysToRemove) {
+            map.remove(key);
+        }
+    }
+
     @Override
     public void checkObjectTtl(String k, int ttl) {
         if (map.containsKey(k)) {
@@ -57,26 +72,26 @@ public class RedisImpl implements Redis {
         }
     }
 
-    private void writeData() {
+    private synchronized void writeData() {
         try (FileOutputStream fos = new FileOutputStream(filePath);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(map);
+            System.out.println("Данные записаны в файл");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void readData() {
+    private synchronized void readData() {
         try (FileInputStream fis = new FileInputStream(filePath);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
-            map = (Map<String, ObjectDTO>) ois.readObject();
+            Map<String, ObjectDTO> newMap = (Map<String, ObjectDTO>) ois.readObject();
+//            if (!newMap.equals(map)) {
+//                map = newMap;
+                System.out.println("Данные прочитаны из файла");
+//            }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-    }
-
-    private void startThread() {
-        ScheduledExecutorService scheduled = Executors.newSingleThreadScheduledExecutor();
-        scheduled.scheduleAtFixedRate(this::writeData, 12000, 12000, TimeUnit.MILLISECONDS);
     }
 }

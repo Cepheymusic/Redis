@@ -1,6 +1,8 @@
 package dto;
 
-public class ObjectDTO {
+import java.io.Serializable;
+
+public class ObjectDTO implements Serializable {
     private String name;
     private int ttl;
     public long timeAdded;
